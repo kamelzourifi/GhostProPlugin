@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Deliberately fixed at net9.0, independent of the plugin's TFM.
+
+    System.Reflection.Metadata reads any assembly's metadata regardless of the
+    framework it targets, so this tool never needs to match net11.0. Pinning it
+    means it always builds with an SDK the machine is guaranteed to have, rather
+    than failing when only an RC SDK is installed.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>asmrefs</AssemblyName>
+    <EnableDynamicLoading>false</EnableDynamicLoading>
+    <SelfContained>false</SelfContained>
+    <!-- Never inherit the plugin's restore graph. -->
+    <RestorePackagesPath Condition="'$(RestorePackagesPath)' == ''"></RestorePackagesPath>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,81 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    TargetFramework MUST match the AssettoServer build the plugin loads into.
+    A mismatch fails at startup with no useful message, so it is not guessed:
+    scripts\build.ps1 reads the server's own TFM and passes it in as
+    GhostProTargetFramework. The value below is only the fallback used when the
+    project is opened directly in an IDE.
+
+    AssettoServer 0.0.55 (503edd87f3) targets net9.0.
+    AssettoServer 0.0.55-pre42 targets net11.0.
+  -->
+  <PropertyGroup>
+    <GhostProTargetFramework Condition="'$(GhostProTargetFramework)' == ''">net9.0</GhostProTargetFramework>
+    <TargetFramework>$(GhostProTargetFramework)</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <SelfContained>false</SelfContained>
+    <DebugType>embedded</DebugType>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Windows'))">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Linux'))">linux-x64</RuntimeIdentifier>
+    <PublishDir>..\out-$(RuntimeIdentifier)\plugins\$(MSBuildProjectName)\</PublishDir>
+    <PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
+
+    <!--
+      Do not emit runtimeconfig.json or deps.json, matching AssettoServer's own
+      Plugin.props. The host supplies both when it loads a plugin.
+
+      Emitting them looks harmless and is not. The generated runtimeconfig pins
+      the exact runtime version the BUILD machine had, so a plugin built with an
+      RC SDK gets:
+
+        "version": "11.0.0-rc.1.26425.128"
+
+      and rollForward: LatestMinor will not carry a prerelease requirement onto a
+      stable 11.0.x. The server then refuses the plugin with "You must install or
+      update .NET to run this application", which points at the runtime rather
+      than at the plugin.
+    -->
+    <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath>..\AssettoServer\bin\$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\plugins\$(MSBuildProjectName)</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath>bin\Release\$(RuntimeIdentifier)\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      runtime AND native must both be excluded, matching AssettoServer's own
+      Plugin.props. With only "runtime", the referenced server project's
+      steam_api.dll (a native asset) is copied into the plugin folder — a 320 KB
+      file the plugin never loads.
+    -->
+    <ProjectReference Include="..\AssettoServer.Shared\AssettoServer.Shared.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime; native</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\AssettoServer\AssettoServer.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime; native</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Lua client must ship next to the DLL or the plugin throws at startup. -->
+    <None Include="lua\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

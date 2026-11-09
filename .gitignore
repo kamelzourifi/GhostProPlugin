@@ -1,0 +1,5 @@
+obj/
+bin/
+.verify/
+src/AssettoServer/
+src/AssettoServer.Shared/

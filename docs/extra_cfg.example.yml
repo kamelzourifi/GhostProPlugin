@@ -1,0 +1,105 @@
+# GhostProPlugin configuration example
+#
+# Merge into your server's cfg/extra_cfg.yml. The three server-level keys at the
+# top are required; the per-plugin block at the bottom is the policy.
+
+# ---------------------------------------------------------------------------
+# Required server-level settings
+# ---------------------------------------------------------------------------
+
+# Without this the server never delivers pushed scripts and never receives
+# client OnlineEvents. GhostProPlugin throws at startup if it is false, rather
+# than loading and silently doing nothing.
+EnableClientMessages: true
+
+# GhostPro's pushed script uses ui.beginBlurredBackground, introduced long ago,
+# and physics.disableCarCollisions. 2651 matches the HardBrain plugins.
+MinimumCSPVersion: 2651
+
+# Only needed for the Time and Weather tabs. Set GhostPro's PersonalTime to
+# false if you do not want it.
+EnableWeatherFx: true
+
+EnablePlugins:
+  - GhostProPlugin
+
+---
+#!GhostProConfiguration
+
+# Master switch.
+Enabled: true
+
+# --- Authority -------------------------------------------------------------
+# Authoritative: the server decides. Turn off only to get GhostPassive v25
+# behaviour, where every client decides for itself and a modified client can
+# claim any state it likes.
+Authoritative: true
+
+# RequireConsent: a ghost request is honoured only if the driver being passed
+# through also has ghost mode enabled. This is the honest implementation of
+# "ghost mode" — nobody gets to drive through someone who has not opted in.
+# Ignored when AdminsOnly is true.
+RequireConsent: true
+
+# AdminsOnly: only administrators may use ghost mode. Useful on a racing server
+# that wants the feature available for staff without it affecting the race.
+AdminsOnly: false
+
+# AllowBots: permit passing through AI/traffic cars. Bots never announce state,
+# so this can only work if the server allows it.
+AllowBots: false
+
+# BroadcastGhostState: push the grant bitmask to clients whenever it changes.
+# Turn off to halve the traffic; clients then keep their last known state.
+BroadcastGhostState: true
+
+# --- Paint -----------------------------------------------------------------
+# AllowRemotePaint: let a player's car colour be mirrored by other drivers.
+AllowRemotePaint: true
+
+# MinBrightness: reject colours darker than this (0.0 - 1.0). A black car is
+# effectively invisible to the drivers behind you. 0 disables the floor.
+#
+# The client clamps its own picker too, but the server check is the one that
+# matters: a client that ignores the floor cannot get a dark colour through.
+MinBrightness: 0.0
+
+# --- Personal time / weather ----------------------------------------------
+PersonalTime: true
+
+# An admin's time/weather choice applies to the WHOLE server.
+#
+# Off (default) means an admin gets a personal override like everyone else, so
+# changing the time changes only their own sky. Turning it on makes their choice
+# global, which changes everyone's lighting mid-race — usually not what you want
+# on a server that already has AC's own admin time command enabled.
+AdminChangeIsGlobal: false
+
+# WeatherFx: only a declaration — it drives the warning at startup. Keep it in
+# step with the server-level EnableWeatherFx above.
+WeatherFx: true
+
+# --- Timing ----------------------------------------------------------------
+# Seconds between the client's ghost-state announcement. The client re-asserts
+# its collision state every 500 ms regardless, so this only affects how fast a
+# new ghost is noticed by peers.
+AnnounceIntervalSeconds: 4
+
+# Seconds of silence after which a client stops treating a car as a ghost.
+# Keep it comfortably larger than AnnounceIntervalSeconds: three missed
+# announcements should expire, one should not.
+StateTtlSeconds: 14
+
+# --- Weather menu ----------------------------------------------------------
+# Restrict the client's weather tab to these WeatherFxType names. Empty means
+# "everything this server build knows". Names are sent from the server and
+# filtered against the enum it was compiled with, so a name this build does not
+# have can never reach the client.
+#
+# Valid values come from AssettoServer.Shared/Weather/WeatherFxType.cs:
+#   Clear FewClouds ScatteredClouds BrokenClouds OvercastClouds Fog Mist
+#   LightRain Rain HeavyRain LightDrizzle Drizzle HeavyDrizzle
+#   LightSnow Snow HeavySnow LightSleet Sleet HeavySleet Hail
+#   LightThunderstorm Thunderstorm HeavyThunderstorm
+#   Squalls Tornado Hurricane Cold Hot Windy Sand Dust Smoke Haze
+WeatherAllowList: []
